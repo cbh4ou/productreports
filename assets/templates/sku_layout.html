@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+  <body class="{{template}}">
+      <main>
+
+      {% include 'nav.html' %}
+
+      {% block content %}{% endblock %}
+
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="/js/lib/saveAsExcel.js">saveAsExcel('dataframe', 'table.xls');</script>
+   <script type="text/javascript">
+
+
+
+
+    $(window).bind("load", function() {
+        $('.dropdown-trigger').dropdown({
+   coverTrigger: false,
+   hover: true
+});
+ $('#upload-file-btn').click(function() {
+        var fileInput = document.getElementById('the-file');
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('file', file);
+        console.log(formData)
+        $.ajax({
+            type: 'POST',
+            url: '/inbound-upload',
+            data: formData,
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function(data) {
+                location.reload();
+            },
+        });
+    });
+        $("th:first").html("SKU");
+      $('.sidenav').sidenav();
+      $('table').addClass('js-sort-table');
+        $('table').addClass('responsive-table');
+      $('.dataframe th').addClass('js-sort-number');
+       $('.dataframe th').eq(6).addClass('js-sort-string');
+       $('.dataframe th').eq(6).removeClass('js-sort-number');
+$('.dataframe th:first').addClass('js-sort-string');
+paginate.init('.dataframe',options,filterOptions);
+$('.dataframe').attr("id", "dataframe")
+
+
+
+var table = document.getElementById("dataframe");
+for (var i = 1, row; row = table.rows[i]; i++) {
+     var sevenVal = 0;
+	 var fourteenVal = 0;
+	 var twentyeightVal = 0;
+   for (var j = 1, col; col = row.cells[j]; j++) {
+ //iterate through columns
+
+    if (j == 3) {
+
+	 sevenVal = $(col).html()*2;
+	 }
+     if (j == 4) {
+	 fourteenVal = $(col).html();
+
+	 }
+	 if (j == 5) {
+	 twentyeightVal = ($(col).html()/2);
+
+	 }
+
+	 if(j ==6){
+	    var stockAVG = (parseFloat(sevenVal) + parseFloat(fourteenVal) + parseFloat(twentyeightVal))/3;
+
+        if($(col).html()==0){
+		    $(col).css("background-color", "grey");
+		    $(col).html("In-house");
+		}
+	    else if(stockAVG/$(col).html() >= .85 || Math.sign($(col).html()) == -1) {
+		   $(col).css("background-color", "red");
+        $(col).html("Restock  " + $(col).text());
+		}
+		else if(stockAVG/$(col).html() >= .80 && stockAVG/$(col).html() <= .85) {
+		$(col).css("background-color", "orange");
+        $(col).html("Warning  " + $(col).text());
+		}
+		else if(stockAVG/$(col).html() >= .75 && stockAVG/$(col).html() <= .80) {
+		$(col).css("background-color", "yellow");
+        $(col).html("Low  " + $(col).text());
+		}
+		else {
+		$(col).css("background-color", "#63CF00");
+        $(col).html("Good  " + $(col).text());
+		}
+
+   	}
+}
+}
+    });
+
+
+       </script>
+
+
+<script src="/js/lib/sort-table.js"></script>
+<script src="/js/lib/paginate.js"></script>
+
+</html>
+

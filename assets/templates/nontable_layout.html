@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+{% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+
+  <body class="{{template}}">
+      <main>
+      {% include 'nav.html' %}
+
+      {% block content %}{% endblock %}
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+
+  <!--  Scripts-->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+
+   <script type="text/javascript">
+ $('.dropdown-trigger').dropdown({
+   coverTrigger: false,
+   hover: true
+});
+
+$.ajax({
+            url: "https://inventory.jkwenterprises.com/json/parentsku",
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(data) {
+                console.log(data[0]);
+
+                 helpers.buildDropdown(
+                    data,
+                    $('#dropdown'),
+                    'Select a SKU'
+                );
+
+            }
+        });
+
+
+var helpers =
+{
+    buildDropdown: function(result, dropdown, emptyMessage)
+    {
+        // Remove current options
+        dropdown.html('');
+        // Add the empty option with the empty message
+        dropdown.append('<option value="">' + emptyMessage + '</option>');
+        // Check result isnt empty
+        if(result != '')
+        {
+            // Loop through each of the results and append the option to the dropdown
+            $.each(result, function(k, v) {
+                dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+            });
+        }
+    }
+}
+
+function request2(boolstatus, psku) {
+
+        $.ajax({
+
+            url: "/editsku/" + $("#dropdown option:selected").text() + "/" + 'default' + '/' + $("input[name=featured]:checked").val(),
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(res) {
+                console.log(res);
+              $(`input[name=featured][value='${res}']`).prop("checked",true);
+            }
+        });
+    }
+
+var childSkuArray;
+
+
+$('select').on('change', function() {
+  var val = $("#dropdown option:selected").text();
+    $.ajax({
+            url: "/editsku/" + val,
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(res) {
+
+                $('.form-div3 input').each(function(i, obj) {
+                    $(this).val("");
+                    });
+                var j = 0;
+                var keys = Object.keys(res);
+
+
+
+                var skuArr =  $('.child input').toArray();
+                var quantArr =  $('.quantity input').toArray();
+                skuArr.forEach(function(item){
+                     $(skuArr[j]).val("");
+                     $(quantArr[j]).val("");
+                     j++;
+                });
+                j = 0
+                keys.forEach(function(key){
+                     $(skuArr[j]).val(key);
+                     $(quantArr[j]).val(res[key]);
+                     j++;
+                });
+                childSkuArray = res;
+                request2("none",val);
+            }
+        });
+});
+
+
+$(".delete").click(function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: "/delete/" + $("#dropdown option:selected").text(),
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify('STACK'),
+        success: function( data, textStatus, jQxhr ){
+            console.log("Sku Updated");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
+
+
+
+$(".submit").click(function(e) {
+    e.preventDefault();
+    var obj = {}
+    var skuArray = [];
+    var quantArray = [];
+    if ($("#dropdown option:selected").val() == '') {
+        val = 'none';
+    }
+    else {
+        val = $("#dropdown option:selected").text();
+    }
+    var val2;
+    if($(".input2").val() == ""){
+        val2 = "none";
+
+    }
+    else {
+        val2 = $(".input2").val();
+    }
+    console.log(val + "    " + val2)
+    var skuArr =  $('.child input').toArray();
+    var quantArr =  $('.quantity input').toArray();
+
+    for(i = 0; i < skuArr.length; i++){
+    skuArray.push($(skuArr[i]).val());
+    }
+    for(i = 0; i < quantArr.length; i++){
+    quantArray.push($(quantArr).eq(i).val());
+    }
+
+    skuArray.forEach(function(value, index) {
+        obj[value] = quantArray[index];
+    });
+
+
+    $.ajax({
+        url: "/editsku/" + val + "/" + val2 + '/' + $("input[name=featured]:checked").val(),
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify(obj),
+        success: function( data, textStatus, jQxhr ){
+            console.log("Sku Updated");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
+
+
+</script>
+
+
+
+
+</html>
+

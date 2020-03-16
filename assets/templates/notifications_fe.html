@@ -1,0 +1,98 @@
+{% extends "notifications_layout.html" %}
+
+{% block pagestyles %}
+<style>
+
+#parent {
+    margin: 5% 0 5% 0;
+}
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+.checkbox-orange[type="checkbox"].filled-in:checked+span:not(.lever):after {
+     border: 1px solid red;
+     background-color: #2196F3;
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="parent">
+    <h1 style="text-align: center;">Edit Funnels</h1>
+  <div class="row">
+ <form class="col s12 l12" style='text-align: center;'  method="post" action="">
+  <div class="row">
+      <div class="col s12 l8 offset-l4">
+  <select class="browser-default" style = "width: 50%; text-align:center;" id="dropdown">
+    <option value="" disabled selected>Choose your option</option>
+  </select>
+  </div>
+  </div>
+  <div class="row">
+   <div class="col s6 l3 offset-l3">
+  <label>
+        <input class="filled-in checkbox-orange sms" id="filled-in-box"  type="checkbox" />
+        <span>SMS</span>
+      </label>
+  </div>
+  <div class="col s6 l3">
+  <label>
+        <input class="filled-in checkbox-orange email" type="checkbox" />
+        <span>Email</span>
+      </label>
+  </div>
+  </div>
+  <div class="row">
+      <div class="col s12 l1 offset-l4">
+      <button class="btn waves-effect waves-light blue submit type="submit" name="action"">Submit
+<i class="material-icons right">send</i>
+</button>
+</div>
+  </div>
+</form>
+  </div>
+  </div>
+
+
+  <div id="parent">
+  <div class="row">
+ <form class="col s12 l12" style='text-align: center;'  method="post" action="">
+  <div class="row">
+      <div class="col s12 l8 offset-l4">
+  <select class="browser-default" style = "width: 50%; text-align:center;" id="dropdown-foo">
+    <option value="" disabled selected>Choose your option</option>
+  </select>
+  </div>
+  </div>
+ <div class='row'>
+    <div class='col s6 l10 offset-l1 attributes'>
+    <label>Funnel Attributes</label>
+    <br>
+    <input type "text" placeholder = 'Funnel Name' name="funnelname" class="funnelname">
+    <input type "text" placeholder = 'Funnel ID' name="funnelid" class="funnelid">
+    <input type "text" placeholder = 'Landing Page Url' name="landingpage" class="landingpage">
+    <input type "text" placeholder = 'GA Tag' name="gatag" class="gatag">
+    </div>
+    </div>
+  <div class="row">
+      <div class="col s12 l1 offset-l4 btn-group">
+          <button class="btn waves-effect waves-light blue delete" style="margin: 10px 0 10px 0;" type="submit" name="action">Delete SKU
+  </button>
+      <button class="btn waves-effect waves-light blue submitfunnel type="submit" name="action"">Submit
+<i class="material-icons right">send</i>
+</button>
+</div>
+  </div>
+</form>
+  </div>
+  </div>
+{% endblock %}
+

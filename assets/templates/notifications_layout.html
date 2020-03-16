@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+
+  <body class="{{template}}">
+      <main>
+      {% include 'nav.html' %}
+
+      {% block content %}
+      {% endblock %}
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}
+    {% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+
+
+
+<script type="text/javascript">
+ $(window).bind("load", function() {
+ $('.dropdown-trigger').dropdown({
+   coverTrigger: false,
+   hover: true
+});
+ $('.sidenav').sidenav();
+ $.ajax({
+            url: "https://inventory.jkwenterprises.com/funnels/names",
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(data) {
+                console.log(data);
+
+                 helpers.buildDropdown(
+                    data,
+                    $('#dropdown'),
+                    'Funnel - Email/SMS'
+                );
+            }
+        });
+
+
+ });
+
+
+
+
+
+
+$('select').on('change', function() {
+
+ $.ajax({
+        url: "https://inventory.jkwenterprises.com/funnels/name",
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'funnel': $(this).find(":selected").text()}),
+        success: function( data, textStatus, jQxhr ){
+           console.log(data)
+           if(data['email'] == true) {
+                    $('.email').prop( "checked", true );
+                    $('#dropdown option').addClass( "columns-bg" );
+                }
+            else {
+                    $('.email').prop( "checked", false);
+                }
+            if(data['sms'] == true) {
+                    $('.sms').prop( "checked", true );
+                }
+            else {
+
+                    $('.sms').prop( "checked", false );
+                }
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+
+});
+
+
+
+
+var helpers =
+{
+    buildDropdown: function(result, dropdown, emptyMessage)
+    {
+        console.log("test")
+        // Remove current options
+        dropdown.html('');
+        // Add the empty option with the empty message
+        dropdown.append('<option value="">' + emptyMessage + '</option>');
+        // Check result isnt empty
+        if(result != '')
+        {
+            // Loop through each of the results and append the option to the dropdown
+            $.each(result, function(k, v) {
+                dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+                if(v.email == true) {
+                    $('.email').prop( "checked", true );
+                    $('#dropdown option').addClass( "columns-bg" );
+                }
+                else {
+                    $('.email').prop( "checked", false);
+                }
+                if(v.sms == true) {
+                    $('.sms').prop( "checked", true );
+                }
+                else {
+
+                    $('.sms').prop( "checked", false );
+                }
+            });
+        }
+    }
+}
+
+$(".submit").click(function(e) {
+    e.preventDefault();
+    var email = false;
+    var sms = false;
+    if ($('.sms').is(":checked"))
+    {
+        sms = true;
+    }
+    else {
+        sms = false;
+    }
+    if ($('.email').is(":checked"))
+    {
+        email = true;
+    }
+    else {
+        email = false;
+    }
+
+    $.ajax({
+        url: "https://inventory.jkwenterprises.com/funnels/names",
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'funnel': $('#dropdown option:selected').text(), 'email': email, 'sms': sms}),
+        success: function( data, textStatus, jQxhr ){
+           print(data)
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
+
+
+
+
+</script>
+
+
+</html>
+

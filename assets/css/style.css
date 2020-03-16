@@ -1,0 +1,112 @@
+/* Custom Stylesheet */
+/**
+ * Use this file to override Materialize files so you can update
+ * the core Materialize files in the future
+ *
+ * Made By MaterializeCSS.com
+ */
+
+html,
+body,
+.login-box {
+  height: 100%;
+}
+  body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1 0 auto;
+  }
+.container{
+
+
+    margin-top: 50px;
+}
+.form-div2 {
+
+    margin: 0 0 0 7%;
+    width: 100%;
+}
+
+.waves-blue {
+    background-color: #2196F3 !important;
+    color: black;
+}
+
+nav .brand-logo {
+  color: black;
+   font-weight: 900 !important;
+   min-width: 40%;
+}
+
+p {
+  line-height: 2rem;
+}
+
+.sidenav-trigger {
+  color: #26a69a;
+}
+
+.parallax-container {
+  min-height: 380px;
+  line-height: 0;
+  height: auto;
+  color: rgba(255,255,255,.9);
+}
+  .parallax-container .section {
+    width: 100%;
+  }
+
+@media only screen and (max-width : 992px) {
+  .parallax-container .section {
+    position: absolute;
+    top: 40%;
+  }
+  #index-banner .section {
+    top: 10%;
+  }
+}
+
+@media only screen and (max-width : 600px) {
+  #index-banner .section {
+    top: 0;
+  }
+}
+
+.icon-block {
+  padding: 0 15px;
+}
+.icon-block .material-icons {
+  font-size: inherit;
+}
+
+
+.grid-container {
+  display: grid;
+  grid-template-columns: [col] 100px [col] 100px [col] 100px [col] 100px [col] 100px [col] 100px  ;
+  grid-template-rows: [row] auto [row] auto ;
+   grid-gap: 10px;
+}
+.grid-item {
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  font-size: 12px;
+  text-align: center;
+}
+.box {
+        text-align: left;
+        border-radius: 5px;
+    }
+
+.e {
+        grid-column: col 4 / span 3;
+        grid-row: row 2;
+    }
+    .d {
+        grid-column: col  / span 3;
+        grid-row: row 2;
+    }
+

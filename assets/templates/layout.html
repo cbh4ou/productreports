@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+  <body class="{{template}}">
+      <main>
+      {% include 'nav.html' %}
+    <div class="mcontainer">
+      {% block content %}{% endblock %}
+    </div>
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/b-1.6.1/b-colvis-1.6.1/b-html5-1.6.1/b-print-1.6.1/cr-1.5.2/r-2.2.3/sp-1.0.1/datatables.min.js"></script>
+
+<style>
+.mcontainer {
+    flex: 1 0 auto;
+    padding: 50px;
+  margin: 20px;
+}
+ body {
+     display: flex;
+     min-height: 100vh;
+     flex-direction: column;
+ }
+ main {
+     flex: 1 0 auto;
+ }
+ </style>
+
+<script type="text/javascript">
+
+
+$(function() {
+        $('.dropdown-trigger').dropdown();
+      $('.sidenav').sidenav();
+
+    var start = moment();
+    var end = moment();
+
+
+     $("#myTable").DataTable({
+         "responsive": true,
+         "columnDefs": [ {
+            "targets": [ 6 ],
+            "render": function ( data, type, full, meta ) {
+            return +data+'%';
+            }
+        },
+        { "targets": [7], "visible": false},
+        {
+            "targets": [ 3,4,5 ],
+            "render": function ( data, type, full, meta ) {
+            return '$'+data;
+            }
+        }],
+         "processing": true,
+        "serverSide": false,
+         "dom": '<"dt-buttons"Bf><"clear">lirtp',
+        "paging": true,
+        "autoWidth": true,
+        "lengthMenu": [ [100,250, -1], [100,250, "All"] ],
+        "order": [ 5, 'asc' ],
+        'ajax' : 'https://inventory.jkwenterprises.com/metrics/sales/'+ start.format('YYYY-MM-DD') + '/' + end.format('YYYY-MM-DD'),
+        "columns": [
+            { "data": "funnelname",
+
+                "render": function(data, type, row, meta){
+
+                data = '<a href="' + row.stats_link + '" target="_blank">' + data + '</a>';
+
+
+            return data;
+         }
+            },
+            { "data": "pageviews" },
+            { "data": "sales" },
+            { "data": "revenue" },
+            { "data": "aov" },
+            { "data": "epc" },
+            { "data": "cr" },
+            { "data": "stats_link" },
+        ],
+         "buttons": [
+				'colvis',
+				'copyHtml5',
+        'csvHtml5',
+				'excelHtml5',
+        'pdfHtml5',
+				'print'
+			]
+});
+
+
+    function cb(start, end) {
+     $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+
+    }
+
+    $('#reportrange').daterangepicker({
+        startDate: start,
+        endDate: end,
+        ranges: {
+           'Today': [moment(), moment()],
+           'Yesterday': [moment().subtract(1, 'days'), moment()],
+           'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+           'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+           'This Month': [moment().startOf('month'), moment().endOf('month')],
+           'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }
+    }, cb);
+
+    cb(start, end);
+
+
+});
+
+
+$('#reportrange').on('apply.daterangepicker', function(ev, picker) {
+    $("#myTable").DataTable().ajax.url('https://inventory.jkwenterprises.com/metrics/sales/' + picker.startDate.format('YYYY-MM-DD')+'/'+ picker.endDate.format('YYYY-MM-DD') ).load();
+});
+
+
+
+</script>
+
+
+</html>
+
