@@ -1,6 +1,6 @@
 """Routes for logged-in application."""
 from flask import Blueprint, render_template, redirect, jsonify, request
-from . import db, mail
+from appdb import db
 from datetime import date, timedelta, datetime, timezone
 from databases.models import  Sales, Funnels, Emails
 import requests
@@ -60,14 +60,12 @@ def request_views(view_id, start_date, end_date):
 def email_metrics(start_date, end_date):
     if start_date == end_date:
       end_date = datetime.strftime(datetime.now(timezone.utc) + timedelta(1), '%Y-%m-%d')
-
-
-    response = None
+    start = start_date
+    end = end_date
+    email_funnels = db.session.query(Funnels).all()
 
     funnels = {'data' : []}
-    rev = db.session.query(Emails).distinct(Emails.funnel_id)
-
-    for x in rev:
+    for x in email_funnels:
         stats_link = None
         data = None
         page_views = 0
@@ -76,30 +74,31 @@ def email_metrics(start_date, end_date):
         updated = 0
         email_count = []
         optin_rate = 0
-        view = db.session.query(Funnels).filter(Funnels.funnel_id == x.funnel_id).first()
-        rev = db.session.query(Emails).filter(Emails.time_created >= start_date, Emails.time_created <= end_date, Emails.funnel_id == x.funnel_id).all()
-        if rev is None:
-            continue
-        else:
-            response = request_views(view.view_id ,start_date, end_date)
-            for email_funnel in rev:
-                optins += 1
-                if email_funnel.email not in email_count:
-                    email_count.append(email_funnel.email)
 
+        funnel_query = (db.session.query(Funnels, Emails)
+            .join(Emails, Emails.funnel_id == Funnels.funnel_id)
+            .filter(Emails.time_created >= start_date, Emails.time_created <= end_date, Emails.funnel_id == x.funnel_id)
+            .first())
+
+        if funnel_query == None:
+            continue
+
+        optins = db.session.query(Emails).filter(Emails.time_created >= start_date, Emails.time_created <= end_date, Emails.funnel_id == x.funnel_id).count()
+        db.session.close()
         if optins != 0:
              created = (len(email_count)/optins) * 100
              updated = ((optins - len(email_count))/optins) * 100
 
+        response = request_views(funnel_query.Funnels.view_id ,start, end)
         data = response.json()
         page_views = int(data['reports'][0]['data']['totals'][0]['values'][0])
         stats_link = "https://patpubs-app.clickfunnels.com/funnels/" +  x.funnel_id +  "/stats"
+
         if page_views != 0:
             optin_rate = ((optins/page_views) * 100)
-
-
-            stats = Email_funnel(view.funnel_name, page_views,  optins, "%.2f" %  created, "%.2f" %  updated, "%.2f" % optin_rate, stats_link)
+            stats = Email_funnel(x.funnel_name, page_views,  optins, "%.2f" %  created, "%.2f" %  updated, "%.2f" % optin_rate, stats_link)
             funnels['data'].append(stats.__dict__)
+
 
     return jsonify(funnels)
 
@@ -109,14 +108,15 @@ def get_metrics(start_date, end_date):
     start = start_date
     end = end_date
 
-    response = None
 
     funnels = {'data' : []}
     rev = db.session.query(Sales).filter().distinct(Sales.funnel_id)
+    db.session.close()
     for x in rev:
         f_id = x.funnel_id
         # Query and Make request to GA API
         view = db.session.query(Funnels).filter(Funnels.funnel_id == f_id).first()
+        db.session.close()
         if view is None:
             continue
         else:
@@ -139,8 +139,8 @@ def get_metrics(start_date, end_date):
         else:
             epc = Decimal(revenue)/Decimal(page_views)
             cr = (Decimal(sales)/Decimal(page_views)) * 100
-
-        stats = Funnel_stats(view.funnel_name, page_views, sales, revenue,"%.2f" % aov,"%.2f" % epc , "%.2f" % cr, view.stats_link)
+        stats_link = "https://patpubs-app.clickfunnels.com/funnels/" +  view.funnel_id +  "/stats"
+        stats = Funnel_stats(view.funnel_name, page_views, sales, revenue,"%.2f" % aov,"%.2f" % epc , "%.2f" % cr, stats_link)
         funnels['data'].append(stats.__dict__)
     return jsonify(funnels)
 

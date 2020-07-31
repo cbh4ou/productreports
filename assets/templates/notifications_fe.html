@@ -1,4 +1,4 @@
-{% extends "notifications_layout.html" %}
+{% extends "editFunnelLayout.html" %}
 
 {% block pagestyles %}
 <style>
@@ -19,19 +19,22 @@ main {
      border: 1px solid red;
      background-color: #2196F3;
 }
-
+input {
+  width: auto;
+}
 
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="parent">
-    <h1 style="text-align: center;">Edit Funnels</h1>
+
+  <div id="parent">
+       <h2 style="text-align: center;">Funnel Editor</h2>
   <div class="row">
  <form class="col s12 l12" style='text-align: center;'  method="post" action="">
   <div class="row">
-      <div class="col s12 l8 offset-l4">
-  <select class="browser-default" style = "width: 50%; text-align:center;" id="dropdown">
+      <div class="col s12 l4 offset-l4">
+  <select class="browser-default"   id="dropdown">
     <option value="" disabled selected>Choose your option</option>
   </select>
   </div>
@@ -50,8 +53,20 @@ main {
       </label>
   </div>
   </div>
+ <div class='row'>
+    <div class='col s6 l12 attributes'>
+    <label>Funnel Attributes</label>
+    <br>
+    <input type "text" placeholder = 'Funnel Name' name="funnelname" class="funnelname attribute">
+    <input type "text" placeholder = 'Funnel ID' name="funnelid" class="funnelid  attribute">
+    <input type "text" placeholder = 'Landing Page Url' name="landingpage attribute" class="landingpage attribute">
+    <input type "text" placeholder = 'GA Tag' name="gatag" class="gatag attribute">
+    </div>
+    </div>
   <div class="row">
-      <div class="col s12 l1 offset-l4">
+      <div class="col s12 l6 offset-l3 btn-group">
+          <button class="btn waves-effect waves-light blue delete" style="margin: 10px 0 10px 0;" type="submit" name="action">Delete SKU
+  </button>
       <button class="btn waves-effect waves-light blue submit type="submit" name="action"">Submit
 <i class="material-icons right">send</i>
 </button>
@@ -61,38 +76,25 @@ main {
   </div>
   </div>
 
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+      <h5 id='question'>Delete funnel: <p style='color: red; display: inline;'></p>?</h5>
+      <p>Once you click agree the funnel will be removed from the entire system</p>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" id='disagree' class="modal-close waves-effect waves-green btn-flat disagree">Disagree</a>
+      <a href="#!" id ='agree' class="modal-close waves-effect waves-green btn-flat agree">Agree</a>
+    </div>
+  </div>
 
-  <div id="parent">
-  <div class="row">
- <form class="col s12 l12" style='text-align: center;'  method="post" action="">
-  <div class="row">
-      <div class="col s12 l8 offset-l4">
-  <select class="browser-default" style = "width: 50%; text-align:center;" id="dropdown-foo">
-    <option value="" disabled selected>Choose your option</option>
-  </select>
-  </div>
-  </div>
- <div class='row'>
-    <div class='col s6 l10 offset-l1 attributes'>
-    <label>Funnel Attributes</label>
-    <br>
-    <input type "text" placeholder = 'Funnel Name' name="funnelname" class="funnelname">
-    <input type "text" placeholder = 'Funnel ID' name="funnelid" class="funnelid">
-    <input type "text" placeholder = 'Landing Page Url' name="landingpage" class="landingpage">
-    <input type "text" placeholder = 'GA Tag' name="gatag" class="gatag">
+   <div id="modal2" class="modal">
+    <div class="modal-content">
+      <h5 id='status'>Funnel: <p style='color: red; display: inline;'></p> has been deleted</h5>
     </div>
+    <div class="modal-footer">
+      <a href="#!" id='disagree' class="modal-close waves-effect waves-green btn-flat disagree">Okay</a>
     </div>
-  <div class="row">
-      <div class="col s12 l1 offset-l4 btn-group">
-          <button class="btn waves-effect waves-light blue delete" style="margin: 10px 0 10px 0;" type="submit" name="action">Delete SKU
-  </button>
-      <button class="btn waves-effect waves-light blue submitfunnel type="submit" name="action"">Submit
-<i class="material-icons right">send</i>
-</button>
-</div>
   </div>
-</form>
-  </div>
-  </div>
+
 {% endblock %}
 

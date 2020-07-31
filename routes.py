@@ -7,11 +7,9 @@ from email.mime.text import MIMEText
 import json
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
-
-
 from decimal import Decimal
 
-from . import app, db
+from appdb import app, db
 
 # Blueprint Configuration
 main_bp = Blueprint('main_bp', __name__,
@@ -167,9 +165,9 @@ def testdb():
             new_arr.append({'SKU': sku_names[x], 'Inbound': inbound[x] })
 
     if new_arr:
-        sender_email = "cbh4ou@gmail.com"
+        sender_email = "connor@jkwenterprises.com"
         receiver_email = ["connor@jkwenterprises.com", "zach@jkwenterprises.com", "logan@jkwenterprises.com", "jake@jkwenterprises.com", "scott@jkwenterprises.com", "jason@jkwenterprises.com"]
-        password = "doabynovtpdoudwz"
+        password = "Primussucks72!"
 
         message = MIMEMultipart("alternative")
         message["Subject"] = "New Stock Alert"
@@ -280,12 +278,9 @@ def combine_orders(contact, timerange, order, funnel):
 
 class notif_item():
 
-    def __init__(self, row, name, email, sms):
+    def __init__(self, row, name):
         self.id = row
         self.name = name
-        self.email = email
-        self.sms = sms
-
 
 @main_bp.route('/funnels/names', methods=['GET', 'POST'])
 def send_notifs():
@@ -297,24 +292,16 @@ def send_notifs():
         num = 0
         for i in funnels:
             num=num+1
-            dropdown_object.append(notif_item(num, i.Funnels.funnel_name, i.Notifs.email, i.Notifs.sms).__dict__)
+            dropdown_object.append(notif_item(num, i.Funnels.funnel_name).__dict__)
 
         return jsonify(dropdown_object)
     else:
-        funnel_object = request.get_json()
-        funnel = Notifs.query.filter(Notifs.funnel_name==funnel_object['funnel']).first()
-        funnel.email = funnel_object['email']
-        funnel.sms = funnel_object['sms']
-        db.session.commit()
-        return jsonify("Success"), 200
-
-
-@main_bp.route('/funnels/name', methods=['POST'])
-def send_booleans():
-    if request.method == 'POST':
         resp = request.get_json()
         notif = Notifs.query.filter(Notifs.funnel_name==resp['funnel']).first()
-        return {'email' : notif.email, 'sms' : notif.sms}, 200
+        funnels = Funnels.query.filter(Funnels.funnel_name==resp['funnel']).first()
+        return {'funnelid' : funnels.funnel_id, 'ga-tag':funnels.view_id, 'landingpage':funnels.optin, 'email' : notif.email, 'sms' : notif.sms}, 200
+
+
 
 @main_bp.route('/cfwebhook/funnel_webhooks/test', methods=['POST'])
 def cf_webhook():
@@ -330,8 +317,8 @@ def cf_webhooks():
 
 
 
-@main_bp.route('/delete/funnel/<funnel>', methods=['GET', 'POST'])
-def edit_funnels(funnel):
+@main_bp.route('/funnel/edit/<action>', methods=['GET', 'POST'])
+def edit_funnels(action):
     if request.method == 'GET':
         funnels = (db.session.query(Funnels, Notifs)
             .join(Notifs, Notifs.funnel_name == Funnels.funnel_name)
@@ -340,15 +327,37 @@ def edit_funnels(funnel):
         num = 0
         for i in funnels:
             num=num+1
-            dropdown_object.append(notif_item(num, i.Funnels.funnel_name, i.Notifs.email, i.Notifs.sms).__dict__)
+            dropdown_object.append(notif_item(num, i.Funnels.funnel_name,i.Notifs.email, i.Notifs.sms).__dict__)
 
         return jsonify(dropdown_object)
     else:
         funnel_object = request.get_json()
-        funnel = Notifs.query.filter(Notifs.funnel_name==funnel_object['funnel']).first()
-        funnel.email = funnel_object['email']
-        funnel.sms = funnel_object['sms']
-        db.session.commit()
+        if action == 'update':
+            if funnel_object['funnelname'] == 'none':
+                funnel = Funnels(funnel_name = funnel_object['newfunnel'], view_id= funnel_object['gatag'],
+                optin = funnel_object['landingpage'], funnel_id = funnel_object['funnelid'])
+                db.session.add(funnel)
+                notif = Notifs(funnel_name = funnel_object['newfunnel'],sms = funnel_object['sms'], email = funnel_object['email'])
+                db.session.add(notif)
+                db.session.commit()
+            else:
+                funnel = Funnels.query.filter(Funnels.funnel_name== funnel_object['funnelname']).first()
+                funnel.funnel_name = funnel_object['newfunnel']
+                funnel.view_id = funnel_object['gatag']
+                funnel.optin = funnel_object['landingpage']
+                funnel.funnel_id = funnel_object['funnelid']
+                db.session.commit()
+                notif = Notifs.query.filter(Notifs.funnel_name== funnel_object['funnelname']).first()
+                notif.funnel_name = funnel_object['newfunnel']
+                notif.sms = funnel_object['sms']
+                notif.email = funnel_object['email']
+                db.session.commit()
+        else:
+            funnel_object = request.get_json()
+            funnel = Funnels.query.filter(Funnels.funnel_name== funnel_object['funnelname']).delete()
+            db.session.commit()
+            notif = Notifs.query.filter(Notifs.funnel_name== funnel_object['funnelname']).delete()
+            db.session.commit()
         return jsonify("Success"), 200
 
 

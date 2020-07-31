@@ -1,16 +1,13 @@
-from sqlalchemy import Column, Integer,Unicode, Boolean
 import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from selenium import webdriver
 import time
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from flask import jsonify
 from twilio.rest import Client
-
-
+from databases.models  import  Funnels, Notifs, Parentsku
+from flask import jsonify
+from datetime import datetime
+import pandas as pd
 
 class Funnel_info:
 	def __init__(self, funnel_name, link):
@@ -19,61 +16,7 @@ class Funnel_info:
 
 
 
-
-BaseModel = declarative_base()
-
-class Funnels(BaseModel):
-    """Model for the stations table"""
-    __tablename__ = 'funnel_identities'
-    __table_args__ = {'extend_existing': True}
-    id = Column(Integer, primary_key = True)
-    funnel_name = Column(Unicode)
-    funnel_id = Column(Unicode)
-    view_id = Column(Unicode)
-    stats_link = Column(Unicode)
-    optin = Column(Unicode)
-
-    @property
-    def serialize(self):
-       """Return object data in easily serializable format"""
-       return {
-           'id': self.id,
-           'funnel_name': self.funnel_name,
-           'funnel_id': self.funnel_sku,
-           # This is an example how to deal with Many2Many relations
-           'view_id': self.view_id,
-           'stats_link' : self.stats_link,
-           'optin' : self.optin
-
-       }
-
-       def __init__(self, funnel_name,funnel_id, view_id, optin, stats_link):
-           self.id = id
-           self.funnel_name = funnel_name
-           self.funnel_id = funnel_id
-           self.view_id = view_id
-           self.stats_link = stats_link
-           self.optin = optin
-
-
-class Notifs(BaseModel):
-
-    __tablename__='notif_settings'
-    __table_args__ = {'extend_existing': True}
-
-
-    id = Column(Integer, primary_key = True)
-    funnel_name = Column(Unicode)
-    sms = Column(Boolean)
-    email = Column(Boolean)
-
-
-
-
-
-
-def send_email(new_arr):
-
+def send_alert(new_arr):
     for item in new_arr:
         notif = Notifs.query.filter(Notifs.funnel_name==item).first()
         if notif.email:
@@ -100,11 +43,11 @@ def send_email(new_arr):
 
             html = """\
             <html>
-              <body>
+                <body>
                 <h4>Funnels Down<h4/>
                 %s
 
-              </body>
+                </body>
             </html>
             """ % final_string
 
@@ -125,37 +68,38 @@ def send_email(new_arr):
                     sender_email, receiver_email, message.as_string()
                 )
             body_string = ''
+            sms_string = ''
             for item in new_arr:
                 body_string += ' Funnel: %s is down.  Go here to check: %s' %  (item['funnel_name'], item['link'])
-        else:
-            pass
-        if notif.sms:
-            account_sid = 'ACd654cc97633bc7ffe43212e705370d84'
-            auth_token = '410753a8ec99c382fb743342c05bcd1e'
-            client = Client(account_sid, auth_token)
-            numbers_to_message = ['+14052070115', '+19185778827', '+14052068053']
-            for number in numbers_to_message:
-                message = client.messages \
+                sms_string += '\nFunnel: %s is down.  Go here to check: %s' %  (item['funnel_name'], item['link'])
+            else:
+                pass
+            if notif.sms:
+                account_sid = 'ACd654cc97633bc7ffe43212e705370d84'
+                auth_token = '410753a8ec99c382fb743342c05bcd1e'
+                client = Client(account_sid, auth_token)
+                numbers_to_message = ['+14052070115', '+19185778827', '+14052068053']
+                for number in numbers_to_message:
+                    message = client.messages \
                         .create(
-                             body=body_string,
-                             from_='+14056228386',
-                             to=number
-                         )
+                                body=sms_string,
+                                from_='+14056228386',
+                                to=number
+                                 )
 
-            print(message.sid)
+                    print(message.sid)
 
-        else:
-            pass
+                else:
+                    pass
 
 
-    print(new_arr)
+        print(new_arr)
 
 
 print('start')
-engine = create_engine('postgresql+psycopg2://jkwuser:a-nice-random-password@10.0.0.46:11366/skudb')
-Session = sessionmaker(bind=engine)
-session = Session()
-p_skus = session.query(Funnels).all()
+
+
+p_skus = Funnels.query.all()
 array_funnels = []
 
 
@@ -168,16 +112,15 @@ browser = webdriver.Chrome(options = chrome_options)
 
 
 for i in p_skus:
-    if i.optin == 'https://patpubs.clickfunnels.com/trump-maga-hat-f-s-offer676769':
-        browser.get(i.optin)
-        time.sleep(1)
-        if 'https://patpubs.clickfunnels.com/nopage_error.html' == browser.current_url:
+    browser.get(i.optin)
+    time.sleep(1)
+    if 'https://patpubs.clickfunnels.com/nopage_error.html' == browser.current_url:
             funnel_class = Funnel_info(i.funnel_name, i.optin)
             array_funnels.append(funnel_class.__dict__)
 
 if array_funnels is not []:
     print(array_funnels)
-    send_email(array_funnels)
+    send_alert(array_funnels)
 
 browser.quit()
 
@@ -185,7 +128,96 @@ print('success')
 
 
 
+def testdb():
+    sku_names = []
+    sku_percent_left = []
+    inbound = []
+    all_skus = Parentsku.query().all()
+    tt = pd.read_csv('/home/jkwent/productreports/your_csv.csv', delimiter=',')
+    item_arr = []
+    for index, row in tt.iterrows():
+        item_arr.append(row['Sku Name'])
+    for sku in all_skus:
+        if sku != None:
+            sku_avg = (sku.day3 * 4.6667 + sku.day7 * 2 + sku.day14 + sku.day28 /2) / 4
+            if sku.encorestock != None and sku.encorestock != 0 and sku_avg/sku.encorestock >= .75:
+                sku_names.append(sku.parent_sku)
+                sku_percent_left.append((sku_avg/sku.encorestock))
+                if sku.inboundstock > 0:
+                    inbound.append("Awaiting Arrival")
+                else:
+                    inbound.append("REORDER NOW: Only %f%s of stock left" % ((1 -(sku_avg/sku.encorestock)) * 100, "%"))
+    df = pd.DataFrame({'Sku Name':sku_names,
+                   'Stock Level Percent':sku_percent_left,
+                   'Inbound':inbound,
+                   'Time': datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}, columns= ['Sku Name', 'Stock Level Percent', 'Inbound', 'Time'])
 
+
+    df.to_csv('/home/jkwent/productreports/your_csv.csv', index=False)
+
+    new_arr = []
+    for x in range(len(sku_names)):
+        if sku_names[x] not in item_arr:
+            new_arr.append({'SKU': sku_names[x], 'Inbound': inbound[x] })
+
+    if new_arr:
+        sender_email = "connor@jkwenterprises.com"
+        receiver_email = ["connor@jkwenterprises.com", "zach@jkwenterprises.com", "scott@jkwenterprises.com"]
+        password = "Primussucks72!"
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "New Stock Alert"
+        message["From"] = sender_email
+        message["To"] = ", ".join(receiver_email)
+
+        # Create the plain-text and HTML version of your message
+        text = """\
+        Hi,
+        How are you?
+        Real Python has many great tutorials:
+        www.realpython.com"""
+        final_string = ""
+        for item in new_arr:
+            final_string += """\
+
+            <p> ***%s*** : %s </p>
+        """ % (item['SKU'],item['Inbound'])
+
+
+
+        html = """\
+        <html>
+          <body>
+            <h4>Critical Stock Levels<h4/>
+
+            %s
+            <br>
+            <a href="https://inventory.jkwenterprises.com/">Click to go to Inventory Tracker</a>
+          </body>
+        </html>
+        """ % final_string
+
+        # Turn these into plain/html MIMEText objects
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+
+        # Add HTML/plain-text parts to MIMEMultipart message
+        # The email client will try to render the last part first
+        message.attach(part1)
+        message.attach(part2)
+
+        # Create secure connection with server and send email
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(
+                sender_email, receiver_email, message.as_string()
+            )
+
+
+
+
+    return jsonify(new_arr)
 
 
 

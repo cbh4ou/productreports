@@ -22,15 +22,11 @@
 
   <!--  Scripts-->
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
 
    <script type="text/javascript">
- $('.dropdown-trigger').dropdown({
-   coverTrigger: false,
-   hover: true
-});
+
 
 $.ajax({
             url: "https://inventory.jkwenterprises.com/json/parentsku",
@@ -81,24 +77,26 @@ function request2(boolstatus, psku) {
             }
         });
     }
-
 var childSkuArray;
 
 
 $('select').on('change', function() {
   var val = $("#dropdown option:selected").text();
     $.ajax({
-            url: "/editsku/" + val,
-            type: 'GET',
-            dataType: 'json', // added data type
+            url: "/editsku/get",
+            dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'parentsku': val}),
             success: function(res) {
-
+                console.log(res)
                 $('.form-div3 input').each(function(i, obj) {
                     $(this).val("");
                     });
                 var j = 0;
-                var keys = Object.keys(res);
 
+                var keys = Object.keys(res['child']);
+                console.log(keys)
 
 
                 var skuArr =  $('.child input').toArray();
@@ -111,11 +109,12 @@ $('select').on('change', function() {
                 j = 0
                 keys.forEach(function(key){
                      $(skuArr[j]).val(key);
-                     $(quantArr[j]).val(res[key]);
+                     $(quantArr[j]).val(res['child'][key]);
                      j++;
                 });
                 childSkuArray = res;
-                request2("none",val);
+                console.log(res['featured'])
+                $(`input[name=featured][value='${res['featured']}']`).prop("checked",true);
             }
         });
 });
@@ -123,21 +122,32 @@ $('select').on('change', function() {
 
 $(".delete").click(function(e) {
     e.preventDefault();
+
+    $('#question p').text($("#dropdown option:selected").text());
+    $('.modal').modal();
+    $('#modal1').modal('open');
+
+});
+
+
+ $("#agree").click(function(e) {
+    e.preventDefault();
     $.ajax({
-        url: "/delete/" + $("#dropdown option:selected").text(),
+        url: "/delete/sku",
         dataType: 'json',
         type: 'post',
         contentType: 'application/json',
-        data: JSON.stringify('STACK'),
+        data: JSON.stringify({'sku' : $("#dropdown option:selected").text()}),
         success: function( data, textStatus, jQxhr ){
-            console.log("Sku Updated");
+            $('#status p').text($("#dropdown option:selected").text());
+            $('.modal2').modal();
+    $('#modal2').modal('open');
         },
         error: function( jqXhr, textStatus, errorThrown ){
             console.log( errorThrown );
         }
     });
 });
-
 
 
 $(".submit").click(function(e) {
@@ -176,11 +186,11 @@ $(".submit").click(function(e) {
 
 
     $.ajax({
-        url: "/editsku/" + val + "/" + val2 + '/' + $("input[name=featured]:checked").val(),
+        url: "/editsku/" + $("input[name=featured]:checked").val(),
         dataType: 'json',
         type: 'post',
         contentType: 'application/json',
-        data: JSON.stringify(obj),
+        data: JSON.stringify({'parent': {'newparent': val2, 'parentsku': val}, 'child' : obj}),
         success: function( data, textStatus, jQxhr ){
             console.log("Sku Updated");
         },

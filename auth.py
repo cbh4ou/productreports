@@ -1,11 +1,9 @@
 from flask import redirect, render_template, flash, Blueprint, request, url_for
 from flask_login import login_required, logout_user, current_user, login_user
-
 from werkzeug.security import generate_password_hash
-from .forms import LoginForm, SignupForm
-from .databases.models import db, User
-from . import login_manager
-
+from forms import LoginForm, SignupForm
+from appdb import login_manager
+from databases.models import Users
 
 # Blueprint Configuration
 auth_bp = Blueprint('auth_bp', __name__,
@@ -15,7 +13,7 @@ auth_bp = Blueprint('auth_bp', __name__,
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login_page():
-    """User login page."""
+    """Users login page."""
     # Bypass Login screen if user is logged in
     if current_user.is_authenticated:
         return redirect(url_for('main_bp.dashboard'))
@@ -27,7 +25,7 @@ def login_page():
             email = request.form.get('email')
             password = request.form.get('password')
             # Validate Login Attempt
-            user = User.query.filter_by(email=email).first()
+            user = Users.query.filter_by(email=email).first()
             if user:
                 if user.check_password(password=password):
                     login_user(user)
@@ -45,7 +43,7 @@ def login_page():
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup_page():
-    """User sign-up page."""
+    """Users sign-up page."""
     signup_form = SignupForm(request.form)
     # POST: Sign user in
     if request.method == 'POST':
@@ -55,9 +53,9 @@ def signup_page():
             email = request.form.get('email')
             password = request.form.get('password')
             website = request.form.get('website')
-            existing_user = User.query.filter_by(email=email).first()
+            existing_user = Users.query.filter_by(email=email).first()
             if existing_user is None:
-                user = User(name=name,
+                user = Users(name=name,
                             email=email,
                             password=generate_password_hash(password, method='sha256'),
                             website=website)
@@ -78,7 +76,7 @@ def signup_page():
 @auth_bp.route("/logout")
 @login_required
 def logout_page():
-    """User log-out logic."""
+    """Users log-out logic."""
     logout_user()
     return redirect(url_for('auth_bp.login_page'))
 
@@ -87,7 +85,7 @@ def logout_page():
 def load_user(user_id):
     """Check if user is logged-in on every page load."""
     if user_id is not None:
-        return User.query.get(user_id)
+        return Users.query.get(user_id)
     return None
 
 

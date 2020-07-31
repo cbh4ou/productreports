@@ -1,6 +1,6 @@
 """Routes for logged-in application."""
 from flask import Blueprint, render_template, redirect, jsonify, request
-from . import db, mail
+from appdb import db
 from datetime import date, timedelta, datetime ,timezone
 from databases.models import Sku, Parentsku, Quantities, Sales
 import smtplib, ssl

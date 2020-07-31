@@ -163,7 +163,24 @@ $(".submit").click(function(e) {
     });
 });
 
+$(".delete").click(function(e) {
+    e.preventDefault();
 
+
+    $.ajax({
+        url: "https://inventory.jkwenterprises.com/funnels/names/delete",
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'funnel': $('#dropdown option:selected').text()}),
+        success: function( data, textStatus, jQxhr ){
+           print(data)
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
 
 
 </script>

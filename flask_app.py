@@ -1,10 +1,10 @@
     # A very simple Flask Hello World app for you to get started with...
 
-from flask import request, render_template, redirect, url_for, jsonify
+from flask import request, render_template, redirect, url_for, jsonify, Blueprint
 from databases.models import Sku, Methods, Parentsku, Quantities, Funnels
 import json
 import requests
-from . import app, db
+from appdb import app, db
 from datetime import date, timedelta, datetime
 import pandas as pd
 import demjson
@@ -14,7 +14,12 @@ import time
 from flask_login import login_required
 import csv
 import pandas
-import csv
+
+og_bp = Blueprint('og_bp', __name__,
+                    template_folder='assets/templates',
+                    static_folder='assets')
+
+
 ALLOWED_EXTENSIONS = set(['csv', 'xlsx'])
 
 inbound_upload_time = None
@@ -29,7 +34,7 @@ order_list_import = os.path.join(here, 'order-list.csv')
 encore_stock = os.path.join(here, 'rslt.xlsx')
 records = os.path.join(here, 'recordtimes.txt')
 
-@app.route('/importnowplz', methods=['POST'])
+@og_bp.route('/importnowplz', methods=['POST'])
 def import_now():
 
     # check if the post request has the file part
@@ -82,7 +87,7 @@ def import_now():
 
 	        return 'thanks'
 
-@app.route('/')
+@og_bp.route('/')
 @login_required
 def test_main():
     today_arr = []
@@ -125,7 +130,7 @@ def test_main():
 
     return render_template("skudataTable.html", data=html, inbound = lines[1], stock = lines[0])
 
-@app.route('/featured')
+@og_bp.route('/featured')
 @login_required
 def test_feature():
 
@@ -155,7 +160,7 @@ def test_feature():
     return render_template("skudataTable.html", data=html,  inbound = lines[1],stock = lines[0]  )
 
 
-@app.route('/funnelstats')
+@og_bp.route('/funnelstats')
 @login_required
 def metric_table():
 
@@ -195,7 +200,7 @@ def query_stock(t, inven_type):
         return parent_skus_arr
 
 
-@app.route('/emailfunnelstats')
+@og_bp.route('/emailfunnelstats')
 @login_required
 def email_funnel():
     return render_template("funnelsTable.html")
@@ -295,7 +300,7 @@ def get_quantity(s):
     tempquant = db.session.query(Quantities).filter_by(child_sku=s).first()
     return tempquant.quantity
 
-@app.route('/itemorder', methods=['POST'])
+@og_bp.route('/itemorder', methods=['POST'])
 def receive_item():
     foo = request.get_data()
     python_obj = json.loads(foo)
@@ -307,7 +312,7 @@ def receive_item():
         db.session.commit()
     return jsonify({'status': 200}),200
 
-@app.route('/cancelorders', methods=['GET'])
+@og_bp.route('/cancelorders', methods=['GET'])
 def cancel_items():
     orders_today = datetime.now().strftime("%Y-%m-%d")
     url = "https://ssapi6.shipstation.com/orders"
@@ -333,7 +338,7 @@ def cancel_items():
     return jsonify("Success"), 200
 
 
-@app.route('/importcsv', methods=['GET'])
+@og_bp.route('/importcsv', methods=['GET'])
 def importcsv():
     loaddata = Methods()
     return loaddata.start_parentsku_import()
@@ -341,7 +346,7 @@ def importcsv():
 
 
 
-@app.route('/editsku', methods=['GET', 'POST'])
+@og_bp.route('/editsku', methods=['GET', 'POST'])
 @login_required
 def editsku():
     error = None
@@ -355,12 +360,14 @@ def editsku():
 
 
 # Returns search query to front-end
-@app.route('/editsku/<parentsku>/<newparent>/<status>', methods=['GET','POST'])
+@og_bp.route('/editsku/<status>', methods=['GET','POST'])
 @login_required
-def editskuroute(parentsku, newparent, status):
+def editskuroute(status):
+    resp = request.get_json()
+    newparent = resp['parent']['newparent']
+    parentsku = resp['parent']['parentsku']
+    child_skus = resp['child']
     if request.method == 'POST':
-        data = request.get_data()
-        child_skus = demjson.decode(data)
         if parentsku == 'none' and newparent != 'none':
             new_sku = Parentsku(parent_sku=newparent, featured = True , encorestock = 0, inboundstock = 0, day1=0, day3=0, day7=0, day14=0, day28=0)
             db.session.add(new_sku)
@@ -412,22 +419,25 @@ def setfeature(status, parentsku):
         parent_sku.featured = False
         db.session.commit()
 
-@app.route('/delete/<parentsku>', methods=['GET','POST'])
+@og_bp.route('/delete/sku', methods=['GET','POST'])
 @login_required
 def delete_sku(parentsku):
     if request.method == 'POST':
-        db.session.query(Parentsku).filter_by(parent_sku=parentsku).delete()
+        resp = request.get_json()
+        db.session.query(Parentsku).filter_by(parent_sku=resp['sku']).delete()
         db.session.commit()
         return jsonify('Sku Deleted'), 200
 
 
 
 # Returns search query to front-end
-@app.route('/editsku/<parentsku>', methods=['GET','POST'])
+@og_bp.route('/editsku/get', methods=['GET','POST'])
 @login_required
-def editskuroutetest(parentsku):
+def editskuroutetest():
     newparent = None
-    if request.method == 'POST':
+    resp = request.get_json()
+    parentsku = resp['parentsku']
+    if request.method == 'GET':
         if newparent == 'none':
             data = request.get_data()
             child_skus = demjson.decode(data)
@@ -448,18 +458,18 @@ def editskuroutetest(parentsku):
         child_skus = db.session.query(Quantities, Parentsku).join(Parentsku).filter(Quantities.parent_sku==p_sku.p_id)
         skus =[i.Quantities.child_sku for i in child_skus]
         quantity =[i.Quantities.quantity for i in child_skus]
-        return jsonify(dict(zip(skus, quantity))), 200
+        return jsonify({ 'child' : dict(zip(skus, quantity)), 'status' : p_sku.featured}), 200
 
 
 
 
-@app.errorhandler(404)
+@og_bp.errorhandler(404)
 def page_not_found(e):
     return jsonify("Page not found"), 404
 
 
 
-@app.route('/order-list-import', methods=['GET','POST'])
+@og_bp.route('/order-list-import', methods=['GET','POST'])
 def order_list():
     df = pd.read_csv(order_list_import, header=None, delimiter=',')
 
@@ -471,7 +481,7 @@ def order_list():
 
 
 
-@app.route('/file-upload', methods=['POST'])
+@og_bp.route('/file-upload', methods=['POST'])
 def upload_file():
 	# check if the post request has the file part
 	if 'file' not in request.files:
@@ -497,7 +507,7 @@ def upload_file():
 		df.drop(df.head(2).index,inplace=True)
 		df = df.reset_index(drop=True)
 		for x in range(len(df)):
-		    if df[4][x] == "BUNDLE":
+		    if df[4][x] == "BUNDLE" or df[1][x] == 'KOOZIE-TRUMP-2020TRUMPKAG-003':
 		        continue
 		    else:
 		        result = db.session.query(Parentsku).join(Quantities, Quantities.parent_sku == Parentsku.p_id).filter(Quantities.child_sku==df[1][x]).first()
@@ -525,7 +535,7 @@ def upload_file():
 		return resp
 
 
-@app.route('/inbound-upload', methods=['POST'])
+@og_bp.route('/inbound-upload', methods=['POST'])
 def inbound_upload():
 
     if 'file' not in request.files:
@@ -581,7 +591,7 @@ def inbound_upload():
 
 
 
-@app.route('/ss-upload', methods=['POST'])
+@og_bp.route('/ss-upload', methods=['POST'])
 def ss_upload():
 	# check if the post request has the file part
 	if 'file' not in request.files:

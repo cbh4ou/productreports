@@ -27,26 +27,25 @@
 
 
    <script type="text/javascript">
- $('.dropdown-trigger').dropdown({
-   coverTrigger: false,
-   hover: true
-});
+
+
 
 $.ajax({
-            url: "https://inventory.jkwenterprises.com/json/parentsku",
+            url: "https://inventory.jkwenterprises.com/funnels/names",
             type: 'GET',
             dataType: 'json', // added data type
             success: function(data) {
-                console.log(data[0]);
+                console.log(data);
 
                  helpers.buildDropdown(
                     data,
                     $('#dropdown'),
-                    'Select a funnel'
+                    'Funnel - Email/SMS'
                 );
-
             }
         });
+
+
 
 
 var helpers =
@@ -68,69 +67,75 @@ var helpers =
     }
 }
 
-function request2(boolstatus, psku) {
 
-        $.ajax({
-
-            url: "/editsku/" + $("#dropdown option:selected").text() + "/" + 'default' + '/' + $("input[name=featured]:checked").val(),
-            type: 'GET',
-            dataType: 'json', // added data type
-            success: function(res) {
-                console.log(res);
-              $(`input[name=featured][value='${res}']`).prop("checked",true);
-            }
-        });
-    }
 
 var childSkuArray;
 
 
 $('select').on('change', function() {
   var val = $("#dropdown option:selected").text();
-    $.ajax({
-            url: "/editsku/" + val,
-            type: 'GET',
-            dataType: 'json', // added data type
-            success: function(res) {
 
-                $('.form-div3 input').each(function(i, obj) {
-                    $(this).val("");
-                    });
-                var j = 0;
-                var keys = Object.keys(res);
+   $.ajax({
+        url: "https://inventory.jkwenterprises.com/funnels/names",
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'funnel': val}),
+        success: function( data, textStatus, jQxhr ){
+           console.log(data)
+           if(data['email'] == true) {
+                    $('.email').prop( "checked", true );
+                    $('#dropdown option').addClass( "columns-bg" );
+                }
+            else {
+                    $('.email').prop( "checked", false);
+                }
+            if(data['sms'] == true) {
+                    $('.sms').prop( "checked", true );
+                }
+            else {
+
+                    $('.sms').prop( "checked", false );
+                }
+
+            $('.funnelid').val(data['funnelid']);
+            $('.funnelname').val(val);
+            $('.landingpage').val(data['landingpage']);
+            $('.gatag').val(data['ga-tag']);
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
 
 
-
-                var skuArr =  $('.child input').toArray();
-                var quantArr =  $('.quantity input').toArray();
-                skuArr.forEach(function(item){
-                     $(skuArr[j]).val("");
-                     $(quantArr[j]).val("");
-                     j++;
-                });
-                j = 0
-                keys.forEach(function(key){
-                     $(skuArr[j]).val(key);
-                     $(quantArr[j]).val(res[key]);
-                     j++;
-                });
-                childSkuArray = res;
-                request2("none",val);
-            }
-        });
 });
 
 
 $(".delete").click(function(e) {
     e.preventDefault();
+    $('#question p').text($('.funnelname').val());
+    $('.modal').modal();
+    $('#modal1').modal('open');
+
+});
+
+   $("#agree").click(function(e) {
+    e.preventDefault();
+    var obj = {
+   'funnelname': $('.funnelname').val()
+    }
+    console.log(obj);
     $.ajax({
-        url: "/delete/" + $("#dropdown option:selected").text(),
+        url: "/funnel/edit/delete",
         dataType: 'json',
         type: 'post',
         contentType: 'application/json',
-        data: JSON.stringify('STACK'),
+        data: JSON.stringify(obj),
         success: function( data, textStatus, jQxhr ){
-            console.log("Sku Updated");
+             $('#status p').text($("#dropdown option:selected").text());
+            $('.modal2').modal();
+    $('#modal2').modal('open');
         },
         error: function( jqXhr, textStatus, errorThrown ){
             console.log( errorThrown );
@@ -142,47 +147,57 @@ $(".delete").click(function(e) {
 
 $(".submit").click(function(e) {
     e.preventDefault();
-    var obj = {}
     var skuArray = [];
-    var quantArray = [];
     if ($("#dropdown option:selected").val() == '') {
         val = 'none';
     }
     else {
         val = $("#dropdown option:selected").text();
     }
-    var val2;
-    if($(".input2").val() == ""){
-        val2 = "none";
 
+    if ($('.sms').is(":checked"))
+    {
+        sms = true;
     }
     else {
-        val2 = $(".input2").val();
+        sms = false;
     }
-    console.log(val + "    " + val2)
-    var skuArr =  $('.child input').toArray();
-    var quantArr =  $('.quantity input').toArray();
-
-    for(i = 0; i < skuArr.length; i++){
-    skuArray.push($(skuArr[i]).val());
+    if ($('.email').is(":checked"))
+    {
+        email = true;
     }
-    for(i = 0; i < quantArr.length; i++){
-    quantArray.push($(quantArr).eq(i).val());
+    else {
+        email = false;
     }
 
-    skuArray.forEach(function(value, index) {
-        obj[value] = quantArray[index];
-    });
 
+    if ($(".funnel").val() == '')
+    {
+        newfunnel = 'none';
+    }
+    else
+    {
+        newfunnel = $(".funnel").val();
+    }
 
+    var obj = {
+    'funnelid' : $('.funnelid').val(),
+   'funnelname': val,
+    'landingpage':$('.landingpage').val(),
+    'gatag':$('.gatag').val(),
+    'email': email,
+    'sms': sms,
+    'newfunnel': $('.funnelname').val()
+    }
+    console.log(obj);
     $.ajax({
-        url: "/editsku/" + val + "/" + val2 + '/' + $("input[name=featured]:checked").val(),
+        url: "/funnel/edit/update",
         dataType: 'json',
         type: 'post',
         contentType: 'application/json',
         data: JSON.stringify(obj),
         success: function( data, textStatus, jQxhr ){
-            console.log("Sku Updated");
+            console.log("Funnel Updated");
         },
         error: function( jqXhr, textStatus, errorThrown ){
             console.log( errorThrown );
@@ -192,7 +207,6 @@ $(".submit").click(function(e) {
 
 
 </script>
-
 
 
 

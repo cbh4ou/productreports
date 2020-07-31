@@ -1,4 +1,6 @@
-from datetime import date, timedelta, datetime
+from datetime import  datetime
+
+
 import requests
 print("running")
 day_arr = [1,3,7,14,28]

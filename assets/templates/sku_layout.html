@@ -20,19 +20,10 @@
     {% include 'footer.html' %}
   </body>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="/js/lib/paginate.js?v26923"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script src="/js/lib/saveAsExcel.js">saveAsExcel('dataframe', 'table.xls');</script>
    <script type="text/javascript">
 
-
-
-
-    $(window).bind("load", function() {
-        $('.dropdown-trigger').dropdown({
-   coverTrigger: false,
-   hover: true
-});
  $('#upload-file-btn').click(function() {
         var fileInput = document.getElementById('the-file');
         var file = fileInput.files[0];
@@ -51,6 +42,7 @@
             },
         });
     });
+
         $("th:first").html("SKU");
       $('.sidenav').sidenav();
       $('table').addClass('js-sort-table');
@@ -58,9 +50,10 @@
       $('.dataframe th').addClass('js-sort-number');
        $('.dataframe th').eq(6).addClass('js-sort-string');
        $('.dataframe th').eq(6).removeClass('js-sort-number');
-$('.dataframe th:first').addClass('js-sort-string');
-paginate.init('.dataframe',options,filterOptions);
-$('.dataframe').attr("id", "dataframe")
+       $('.dataframe th').eq(0).removeClass('js-sort-number');
+        $('.dataframe th:first').addClass('js-sort-string');
+        paginate.init('.dataframe',options,filterOptions);
+        $('.dataframe').attr("id", "dataframe")
 
 
 
@@ -110,16 +103,20 @@ for (var i = 1, row; row = table.rows[i]; i++) {
 		}
 
    	}
-}
-}
-    });
 
+}
+    }
+
+    document.onkeydown=function(e){
+        setTimeout(function(){
+    $('tr:first').css('display', 'contents');
+}, 150);
+
+}
 
        </script>
 
-
-<script src="/js/lib/sort-table.js"></script>
-<script src="/js/lib/paginate.js"></script>
+<script src="/js/lib/sort-table.js">$('tr:first').css('display', 'contents');</script>
 
 </html>
 

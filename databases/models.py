@@ -1,12 +1,12 @@
-
+import json
 from sqlalchemy.sql import func
 from numpy import genfromtxt
 import os
-from productreports import db
-here = os.path.dirname(os.path.abspath(__file__))
-import json
+from appdb import  db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+here = os.path.dirname(os.path.abspath(__file__))
+
 
 
 
@@ -128,7 +128,7 @@ class BaseModel(db.Model):
         return ret_data
 
 
-class User(UserMixin, BaseModel):
+class Users(UserMixin, BaseModel):
     """Model for user accounts."""
 
     __tablename__ = 'flasklogin'
@@ -171,7 +171,7 @@ class User(UserMixin, BaseModel):
         return '<User {}>'.format(self.username)
 
 
-class Sku(BaseModel):
+class Sku(UserMixin, BaseModel):
     """Model for the stations table"""
     __tablename__ = 'skus'
     __table_args__ = {'extend_existing': True}
@@ -200,7 +200,7 @@ class Sku(BaseModel):
 
 
 
-class Sales(BaseModel):
+class Sales(UserMixin,BaseModel):
     """Model for the stations table"""
     __tablename__ = 'funnel_metrics'
     __table_args__ = {'extend_existing': True}
@@ -239,7 +239,7 @@ class Sales(BaseModel):
            self.product_name = product_name
 
 
-class Funnels(BaseModel):
+class Funnels(UserMixin, BaseModel):
     """Model for the stations table"""
     __tablename__ = 'funnel_identities'
     __table_args__ = {'extend_existing': True}
@@ -265,14 +265,13 @@ class Funnels(BaseModel):
        }
 
        def __init__(self, funnel_name,funnel_id, stats_link, view_id, optin):
-           self.id = id
            self.funnel_name = funnel_name
            self.funnel_id = funnel_id
            self.view_id = self.view_id
            self.stats_link = self.stats_link
            self.optin = self.optin
 
-class Emails(BaseModel):
+class Emails(UserMixin, BaseModel):
     """Model for the stations table"""
     __tablename__ = 'email_funnels'
     __table_args__ = {'extend_existing': True}
@@ -308,7 +307,7 @@ class Emails(BaseModel):
            self.answer = answer
            self.updated = updated
 
-class Parentsku(BaseModel):
+class Parentsku(UserMixin, BaseModel):
     """Model for the stations table"""
     __tablename__ = 'parentskus'
     __table_args__ = {'extend_existing': True}
@@ -350,11 +349,9 @@ class Parentsku(BaseModel):
             'day14': self.day14,
             'day28': self.day28
            # This is an example how to deal with Many2Many relations
-
-
        }
 
-class Quantities(BaseModel):
+class Quantities(UserMixin, BaseModel):
 
     __tablename__='skuquantities'
     __table_args__ = {'extend_existing': True}
@@ -388,7 +385,7 @@ class Quantities(BaseModel):
 
 
 
-class Notifs(BaseModel):
+class Notifs(UserMixin, BaseModel):
 
     __tablename__='notif_settings'
     __table_args__ = {'extend_existing': True}
