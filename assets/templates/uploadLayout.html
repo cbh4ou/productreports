@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+  <body class="{{template}}">
+      <main>
+
+      {% include 'nav.html' %}
+
+      {% block content %}{% endblock %}
+
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+<script src="/js/lib/paginate.js?v26923"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+   <script type="text/javascript">
+
+ $('#upload-file-btn').click(function() {
+        var fileInput = document.getElementById('the-file');
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('file', file);
+        console.log(formData)
+        $.ajax({
+            type: 'POST',
+            url: '/inbound-upload',
+            data: formData,
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function(data) {
+                location.reload();
+            },
+        });
+    });
+
+</html>
+

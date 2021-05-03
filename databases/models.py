@@ -453,6 +453,70 @@ class Contacts(BaseModel):
        """
        return [ item.serialize for item in self.many2many]
 
+class SuppressedEmails(BaseModel):
+
+    __tablename__='suppressed_emails'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key = True)
+    email = db.Column(db.Unicode)
+    date_inserted = db.Column(db.Unicode)
+
+
+    def __init__(self, email, date_inserted):
+        self.id
+        self.email = email
+        self.date_inserted = date_inserted
+
+    @property
+    def serialize(self):
+       """Return object data in easily serializable format"""
+       return {
+           "id" : self.id,
+           "email" : self.email,
+           "date_inserted" : self.date_inserted
+       }
+    @property
+    def serialize_many2many(self):
+       """
+       Return object's relations in easily serializable format.
+       NB! Calls many2many's serialize property.
+       """
+       return [ item.serialize for item in self.many2many]
+
+class shipstationAddresses(BaseModel):
+
+    __tablename__='ss_addresses'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key = True)
+    customer_email = db.Column(db.Unicode)
+    name = db.Column(db.Unicode)
+    order_number = db.Column(db.Unicode)
+
+
+    def __init__(self, name, customer_email, order_number):
+        self.id
+        self.customer_email = customer_email
+        self.name = name
+        self.order_number = order_number
+
+    @property
+    def serialize(self):
+       """Return object data in easily serializable format"""
+       return {
+           "id" : self.id,
+           "customer_email" : self.customer_email,
+           "order_number" : self.order_number,
+           "name" : self.name
+       }
+    @property
+    def serialize_many2many(self):
+       """
+       Return object's relations in easily serializable format.
+       NB! Calls many2many's serialize property.
+       """
+       return [ item.serialize for item in self.many2many]
 class Methods:
 
     def start_parentsku_import(self):

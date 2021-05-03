@@ -31,11 +31,12 @@ manager.add_command('db', MigrateCommand)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-import auth, routes, auth_routes, funnel_stats, flask_app
+import auth, routes, auth_routes, funnel_stats, flask_app, shipstation
 
 app.register_blueprint(routes.main_bp)
 app.register_blueprint(auth.auth_bp)
 app.register_blueprint(auth_routes.oauth_bp)
 app.register_blueprint(funnel_stats.metrics_bp)
 app.register_blueprint(flask_app.og_bp)
+app.register_blueprint(shipstation.ss_bp)
 

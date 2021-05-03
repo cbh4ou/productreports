@@ -1,15 +1,18 @@
 """Routes for logged-in application."""
 from flask import Blueprint,  redirect, jsonify, request, render_template
 from datetime import date, timedelta, datetime
-from databases.models import Funnels, Sku, Parentsku, Quantities, Sales, Emails, Contacts, Notifs
+from databases.models import Users, Funnels, Sku, Parentsku, Quantities, Sales, Emails, Notifs, SuppressedEmails
 import smtplib, ssl
 from email.mime.text import MIMEText
-import json
 from email.mime.multipart import MIMEMultipart
+import requests
+import dropbox
+import csv
+import os
+import json
 import pandas as pd
 from decimal import Decimal
-
-from appdb import app, db
+from appdb import  db
 
 # Blueprint Configuration
 main_bp = Blueprint('main_bp', __name__,
@@ -29,6 +32,179 @@ def dashboard():
                            current_user=current_user,
                            body="You are now logged in!")
     """
+
+class global_suppression():
+
+    def waypointsoftware(self,email):
+        print("\n\nWaypoint Software \n")
+        url = "https://jkwenterprises.waypointsoftware.io/webhooks/"
+
+        payload = { 'email' : email, 'xauthentication' : '207b26e4120a8fff9734e18bbfd4a52d'  }
+        headers = {
+        'Content-Type': 'application/json',
+        'X-Clickfunnels-Webhook-Delivery-Id': ''
+        }
+
+        response = requests.request("POST", url, headers=headers, json = payload)
+
+        print(response.text.encode('utf8'))
+
+    def earnware(self, email):
+        url = "https://api.earnware.com/production/contacts"
+
+        payload='userId=8fb65c4442c6098b29ed098ad137debe&sourceId=a0da1b0537b243818168a9713b6750c0&status=suppressed&email=' + email
+        headers = {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+
+        print(response.text)
+
+    def sendy(self, email):
+        print("\n\nSendy \n")
+        esp_data_arr = [
+            ['https://patriotpoweredpromotions.com/unsubscribe','RmVFUJOzwW3fLMyotPVJ','FU9DDFshFtQDa58925zvmvcg'],
+            ['https://boomerwebmail.com/unsubscribe','8fzj8s8zG4F409ems4v5','cjHwS8x892gLuUuGn6uZ9pCQ'],
+            ['https://patriotpoweredemail.com/unsubscribe','DuSfSlBJ30pPuc4ERhU0','LNoJG4a0ndx5tLGonFx763kw'],
+            ['https://patriotpoweredoffers.com/unsubscribe','VOtndGvaVaR3ntrqSebL','xTVSUnctdBBbXuLfl19892Sw']
+        ]
+        for list in esp_data_arr:
+            url = list[0]
+
+            payload = 'email={0}&api_key={1}&list={2}'.format(email,list[1],list[2])
+            headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+            }
+
+            response = requests.request("POST", url, headers=headers, data = payload)
+
+            print(response.text.encode('utf8'))
+
+    def campaigner(self, email):
+        print("\n\nCampaigner \n")
+        esp_data_arr = ['ed040a03-e570-4751-b34d-c368179bb81c','cd58ccf8-46d7-465b-a8f2-f1cba6bf0c91','ef4c777b-07b1-483f-9e5d-d2ad667f345a']
+        for list in esp_data_arr:
+            url = "https://edapi.campaigner.com/v1/Subscribers/Remove"
+
+            payload = {"EmailAddress": email}
+            headers = {
+            'Content-Type': 'application/json',
+            'ApiKey': '{0}'.format(list)
+            }
+
+            response = requests.request("POST", url, headers=headers, json = payload)
+
+            print(response.text.encode('utf8'))
+
+    def inboxfirst(self, email):
+        print("\n\nInbox First \n")
+        esp_data_arr = [2711]
+
+
+        for list in esp_data_arr:
+            url = f"http://if.inboxfirst.com/ga/api/v2/suppression_lists/{list}/suppressed_addresses/create_multiple"
+
+            payload = {       "data": [email]}
+            headers = {
+            'Authorization': 'Basic MzgzOmIxZGYxZjMyYjNjOWE5MThlOTYzMmY2ZTA3YTlmZWRhZTk3OTYzZWQ='
+            }
+
+            response = requests.request("POST", url, headers=headers, json = payload)
+
+            print(response.text.encode('utf8'))
+
+    def sendlane(self,email):
+        print("\n\nSend Lane \n")
+        esp_list = [['6cbc8b0030e8e2b','776db60957345ec2796b2ef3ad4f522b'],
+        ['7ab94fb1817d571','730d49d15cfa45315464a60f3a874124']
+        ]
+        url = "https://sendlane.com/api/v1/unsubscribe"
+        for list in esp_list:
+            payload = {'api': list[0],
+            'hash': list[1],
+            'email': email,
+            'optional': '1'}
+            files = [
+
+            ]
+            headers= {}
+
+            response = requests.request("POST", url, headers=headers, data = payload, files = files)
+
+            print(response.text.encode('utf8'))
+
+    def inboxgenie(self, email):
+        print(" \n\n Inbox Genie \n")
+        esp_arr = [
+            ['http://click.conservativeheadlinenews.com','88'],
+            ['http://click.firearmslifenews.com','38'],
+            ['http://click2.patriotpoweredpublishing.com','24'],
+            ['http://click.patriotpoweredpublishing.com', '104'],
+            ['http://click.economiccrisisreport.com','107']
+        ]
+        path ='/Pages/EmailOptout.aspx?email={0}&aid={1}&AP=1'
+        for list in esp_arr:
+            url = list[0] + path.format(email, list[1])
+
+            payload = {       "data": [email]}
+            headers = {
+
+            }
+
+            response = requests.request("POST", url, headers=headers, json = payload)
+
+            print(response.text.encode('utf8'))
+
+    def add_event(self, email):
+        print("\n\nLead was added into database \n")
+        url = "https://inventory.jkwenterprises.com/suppression/log"
+
+        payload = { 'email' : email }
+        headers = {
+        'Content-Type': 'application/json'
+        }
+
+        response = requests.request("POST", url, headers=headers, json = payload)
+
+        print(response.text.encode('utf8'))
+
+@main_bp.route('/suppression/log', methods=['POST'])
+def lead_2db():
+    foo = request.get_data()
+    data = json.loads(foo)
+    try:
+        log = SuppressedEmails(email = data['email'],date_inserted = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+        db.session.add(log)
+        db.session.commit()
+        return(datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+    except Exception as ex:
+        return (str(ex), 'hi')
+
+
+@main_bp.route('/suppressv2/<email>', methods=['GET'])
+def suppressv2_email(email):
+    return ('Success -' + email)
+
+@main_bp.route('/suppress/<email>', methods=['GET'])
+def suppress_email(email):
+    try:
+        gs = global_suppression()
+        gs.earnware(email)
+        gs.waypointsoftware(email)
+        gs.campaigner(email)
+        gs.inboxfirst(email)
+        gs.inboxgenie(email)
+        gs.sendlane(email)
+        gs.sendy(email)
+        log = SuppressedEmails(email = email,date_inserted = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+        db.session.add(log)
+        db.session.commit()
+        return render_template("emails.html", suppressed_email = email)
+    except:
+        return ('Something Has Failed. Get In Touch With Connor.')
+
+
 
 
 @main_bp.route('/funnel-notifs', methods=['GET'])
@@ -121,10 +297,7 @@ def update_db(days):
             new_quant.day28 = quantity[parent_final.index(psku)]
             db.session.commit()
 
-
     return  jsonify(dict(zip(parent_final, quantity)))
-
-
 
 
 
@@ -133,6 +306,7 @@ def update_db(days):
 
 @main_bp.route('/emailnotifications', methods=['GET'])
 def testdb():
+
     sku_names = []
     sku_percent_left = []
     inbound = []
@@ -236,10 +410,8 @@ def receive_item():
         if data['error_message'] is None and data["products"] is not None:
             for each in data["products"]:
                 order = combine_orders(data['contact']["email"],data["created_at"], order, data['funnel_id'])
-                price = each['amount']['fractional']
                 new_sku = Sales(order_id=order, email=data['contact']["email"],
-                time_created=data["created_at"], funnel_id = data['funnel_id'], product_name=each['name'],
-                price=Decimal(price.replace(',',''))/100, product_id=each["id"])
+                time_created=data["created_at"], funnel_id = data['funnel_id'], product_name=each['name'],price = 0, product_id=each["id"])
                 db.session.add(new_sku)
                 db.session.commit()
         else:
@@ -360,10 +532,30 @@ def edit_funnels(action):
             db.session.commit()
         return jsonify("Success"), 200
 
+@main_bp.route('/export/emails/suppressed', methods=['GET'])
+def export_emails():
+    email_csv = "Unsubscribed Emails.csv"
+    here = os.path.dirname(os.path.abspath(__file__))
+    new_csv = os.path.join(here,email_csv)
+    today = date.today()
+    weekday = today.weekday()
 
+    if (weekday):
 
+        dbx = dropbox.Dropbox('81NCrijVuKMAAAAAAAAAAdL-1URD2nif2sJUKDq06k_l4VPVUp_ETOkKAKzk7vOl')
+        print(dbx.users_get_current_account())
 
+        with open(new_csv, 'w+') as f:
+            out = csv.writer(f)
+            out.writerow(['email', 'date_inserted'])
+            for item in db.session.query(SuppressedEmails).all():
+                out.writerow([item.email, item.date_inserted])
+            f.close()
 
-
-
+        with open(new_csv,"rb") as f:
+                 # upload gives you metadata about the file
+                 # we want to overwite any previous version of the file
+            dbx.files_upload(f.read(), f'/Suppressed Emails/{email_csv}', mode=dropbox.files.WriteMode("overwrite"))
+        return('Done')
+    return('Done')
 

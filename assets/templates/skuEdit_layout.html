@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+{% include 'meta.html' %}
+    {% block pagestyles %}
+
+{% endblock %}
+  </head>
+
+  <body class="{{template}}">
+      <main>
+      {% include 'nav.html' %}
+
+      {% block content %}{% endblock %}
+    <!-- Scripts -->
+    {% include 'scripts.html' %}
+    {% block additionalscripts %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+
+  <!--  Scripts-->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script src="https://use.fontawesome.com/a55a655011.js"></script>
+
+
+<script>
+$.ajax({
+            url: "https://inventory.jkwenterprises.com/json/parentsku",
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(data) {
+                console.log(data[0]);
+
+                 helpers.buildDropdown(
+                    data,
+                    $('#selectDescription'),
+                    'Select a SKU'
+                );
+               create_custom_dropdowns();
+            }
+        });
+
+
+    var helpers =
+    {
+        buildDropdown: function(result, dropdown, emptyMessage)
+        {
+            // Remove current options
+            dropdown.html('');
+            // Add the empty option with the empty message
+            dropdown.append('<option value="">' + emptyMessage + '</option>');
+            // Check result isnt empty
+            if(result != '')
+            {
+                // Loop through each of the results and append the option to the dropdown
+                $.each(result, function(k, v) {
+                    dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+                });
+            }
+        }
+    }
+
+function request2(boolstatus, psku) {
+
+        $.ajax({
+
+            url: "/editsku/" + $("#selectDescription option:selected").text() + "/" + 'default' + '/' + $("input[name=featured]:checked").val(),
+            type: 'GET',
+            dataType: 'json', // added data type
+            success: function(res) {
+                console.log(res);
+              $(`input[name=featured][value='${res}']`).prop("checked",true);
+            }
+        });
+    }
+var childSkuArray;
+
+
+$('select').on('change', function() {
+  var val = $("#selectDescription option:selected").text();
+    $.ajax({
+            url: "https://inventory.jkwenterprises.com/editsku/get",
+            dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'parentsku': val}),
+            success: function(res) {
+                console.log(res)
+                $('.form-div3 input').each(function(i, obj) {
+                    $(this).val("");
+                    });
+                var j = 0;
+
+                var keys = Object.keys(res['child']);
+                console.log(keys)
+
+
+                var skuArr =  $('.child input').toArray();
+                var quantArr =  $('.quantity input').toArray();
+                skuArr.forEach(function(item){
+                     $(skuArr[j]).val("");
+                     $(quantArr[j]).val("");
+                     j++;
+                });
+                j = 0
+                keys.forEach(function(key){
+                     $(skuArr[j]).val(key);
+                     $(quantArr[j]).val(res['child'][key]);
+                     j++;
+                });
+                childSkuArray = res;
+                console.log(res['featured'])
+                $(`input[name=featured][value='${res['featured']}']`).prop("checked",true);
+            }
+        });
+});
+
+
+$(".delete").click(function(e) {
+    e.preventDefault();
+
+    $('#question p').text($("#selectDescription option:selected").text());
+    $('.modal').modal();
+    $('#modal1').modal('open');
+
+});
+
+
+ $("#agree").click(function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: "/delete/sku",
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'sku' : $("#selectDescription option:selected").text()}),
+        success: function( data, textStatus, jQxhr ){
+            $('#status p').text($("#selectDescription option:selected").text());
+            $('.modal2').modal();
+    $('#modal2').modal('open');
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
+
+
+$(".submit").click(function(e) {
+    e.preventDefault();
+    var obj = {}
+    var skuArray = [];
+    var quantArray = [];
+    if ($("#selectDescription option:selected").val() == '') {
+        val = 'none';
+    }
+    else {
+        val = $("#selectDescription option:selected").text();
+    }
+    var val2;
+    if($(".input2").val() == ""){
+        val2 = "none";
+
+    }
+    else {
+        val2 = $(".input2").val();
+    }
+    console.log(val + "    " + val2)
+    var skuArr =  $('.child input').toArray();
+    var quantArr =  $('.quantity input').toArray();
+
+    for(i = 0; i < skuArr.length; i++){
+    skuArray.push($(skuArr[i]).val());
+    }
+    for(i = 0; i < quantArr.length; i++){
+    quantArray.push($(quantArr).eq(i).val());
+    }
+
+    skuArray.forEach(function(value, index) {
+        obj[value] = quantArray[index];
+    });
+
+
+    $.ajax({
+        url: "/editsku/" + $("input[name=featured]:checked").val(),
+        dataType: 'json',
+        type: 'post',
+        contentType: 'application/json',
+        data: JSON.stringify({'parent': {'newparent': val2, 'parentsku': val}, 'child' : obj}),
+        success: function( data, textStatus, jQxhr ){
+            console.log("Sku Updated");
+        },
+        error: function( jqXhr, textStatus, errorThrown ){
+            console.log( errorThrown );
+        }
+    });
+});
+
+
+
+function create_custom_dropdowns() {
+    $('select').each(function (i, select) {
+        if (!$(this).next().hasClass('dropdown-select')) {
+            $(this).after('<div class="dropdown-select wide ' + ($(this).attr('class') || '') + '" tabindex="0"><span class="current"></span><div class="list"><ul></ul></div></div>');
+            var dropdown = $(this).next();
+            var options = $(select).find('option');
+            var selected = $(this).find('option:selected');
+            dropdown.find('.current').html(selected.data('display-text') || selected.text());
+            options.each(function (j, o) {
+                var display = $(o).data('display-text') || '';
+                dropdown.find('ul').append('<li class="option ' + ($(o).is(':selected') ? 'selected' : '') + '" data-value="' + $(o).val() + '" data-display-text="' + display + '">' + $(o).text() + '</li>');
+            });
+        }
+    });
+
+    $('.dropdown-select ul').before('<div class="dd-search"><input id="txtSearchValue" autocomplete="off" onkeyup="filter()" class="dd-searchbox" type="text"></div>');
+}
+
+// Event listeners
+
+// Open/close
+$(document).on('click', '.dropdown-select', function (event) {
+    if($(event.target).hasClass('dd-searchbox')){
+        return;
+    }
+    $('.dropdown-select').not($(this)).removeClass('open');
+    $(this).toggleClass('open');
+    if ($(this).hasClass('open')) {
+        $(this).find('.option').attr('tabindex', 0);
+        $(this).find('.selected').focus();
+    } else {
+        $(this).find('.option').removeAttr('tabindex');
+        $(this).focus();
+    }
+});
+
+// Close when clicking outside
+$(document).on('click', function (event) {
+    if ($(event.target).closest('.dropdown-select').length === 0) {
+        $('.dropdown-select').removeClass('open');
+        $('.dropdown-select .option').removeAttr('tabindex');
+    }
+    event.stopPropagation();
+});
+
+function filter(){
+    var valThis = $('#txtSearchValue').val();
+    $('.dropdown-select ul > li').each(function(){
+     var text = $(this).text();
+        (text.toLowerCase().indexOf(valThis.toLowerCase()) > -1) ? $(this).show() : $(this).hide();
+   });
+};
+// Search
+
+// Option click
+$(document).on('click', '.dropdown-select .option', function (event) {
+    $(this).closest('.list').find('.selected').removeClass('selected');
+    $(this).addClass('selected');
+    var text = $(this).data('display-text') || $(this).text();
+    $(this).closest('.dropdown-select').find('.current').text(text);
+    $(this).closest('.dropdown-select').prev('select').val($(this).data('value')).trigger('change');
+});
+
+// Keyboard events
+$(document).on('keydown', '.dropdown-select', function (event) {
+    var focused_option = $($(this).find('.list .option:focus')[0] || $(this).find('.list .option.selected')[0]);
+    // Space or Enter
+    //if (event.keyCode == 32 || event.keyCode == 13) {
+    if (event.keyCode == 13) {
+        if ($(this).hasClass('open')) {
+            focused_option.trigger('click');
+        } else {
+            $(this).trigger('click');
+        }
+        return false;
+        // Down
+    } else if (event.keyCode == 40) {
+        if (!$(this).hasClass('open')) {
+            $(this).trigger('click');
+        } else {
+            focused_option.next().focus();
+        }
+        return false;
+        // Up
+    } else if (event.keyCode == 38) {
+        if (!$(this).hasClass('open')) {
+            $(this).trigger('click');
+        } else {
+            var focused_option = $($(this).find('.list .option:focus')[0] || $(this).find('.list .option.selected')[0]);
+            focused_option.prev().focus();
+        }
+        return false;
+        // Esc
+    } else if (event.keyCode == 27) {
+        if ($(this).hasClass('open')) {
+            $(this).trigger('click');
+        }
+        return false;
+    }
+});
+
+
+</script>
+
+
+
+
+</html>
+
